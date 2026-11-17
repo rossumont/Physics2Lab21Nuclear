@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Radioactive Decay</title>
+<style>
+:root{--bg:#0B1A2B;--fg:#EEE9DC;--mut:#8C9AAB;--g:#7FD4A8;--a:#E8B23A;--line:rgba(255,255,255,.14);--panel:rgba(255,255,255,.04);--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Thai",Tahoma,sans-serif;overflow:hidden}
+body{background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:28px 28px;display:flex;flex-direction:column;height:100vh;height:100dvh}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 4px;gap:10px}
+h1{font-size:20px;font-weight:800;line-height:1.2}
+.sub{color:var(--mut);font-size:13px;margin-top:2px}
+.hb{display:flex;gap:8px;flex:none}
+.hbtn{background:transparent;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 12px;font:600 13px var(--mono);cursor:pointer}
+.chips{display:flex;gap:8px;padding:6px 16px;overflow-x:auto;flex-wrap:nowrap;align-items:center;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:6px 16px;font:600 14px var(--mono);cursor:pointer}
+.chip.on{border-color:var(--g);color:var(--g);box-shadow:0 0 0 1px var(--g) inset}
+.sep{width:1px;height:22px;background:var(--line);flex:none;margin:0 4px}
+.lbl{color:var(--mut);font:12px var(--mono);flex:none;letter-spacing:.08em}
+main{flex:1;min-height:0;display:flex;gap:12px;padding:6px 16px 8px}
+#stage{flex:1;min-width:0;min-height:0;position:relative;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.18);overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%}
+#counter{width:270px;flex:none;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;background:#0a1522;padding:12px;gap:10px;min-height:0}
+.ctop{display:flex;justify-content:space-between;align-items:center;font:600 12px var(--mono);color:var(--mut);letter-spacing:.12em}
+.led{width:13px;height:13px;border-radius:50%;background:#1f3328}
+.led.on{background:var(--g);box-shadow:0 0 14px var(--g)}
+#count{font:700 46px var(--mono);color:var(--a);text-align:right;background:#050c14;border-radius:8px;padding:4px 12px;border:1px solid var(--line);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px}
+.btn{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:9px 6px;font:600 14px var(--mono);cursor:pointer}
+.btn:active,.round:active,#act:active{transform:scale(.96)}
+.btn.g{border-color:var(--g);color:var(--g)}
+.btn.s{font-size:12px;padding:5px}
+#log{flex:1;min-height:120px;overflow:auto;font:15px var(--mono);border:1px solid var(--line);border-radius:8px;background:#050c14}
+#log table{width:100%;border-collapse:collapse}
+#log th{color:var(--mut);font-weight:600;text-align:right;padding:7px 10px;border-bottom:1px solid var(--g);position:sticky;top:0;background:#0d1c2c;font-size:13px}
+#log td{text-align:right;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.08);height:34px}
+#log tr:nth-child(even) td{background:rgba(255,255,255,.03)}
+#log td:first-child,#log th:first-child{color:var(--mut);text-align:center;width:36px}
+#log td.c{color:var(--a)}
+#log tr.new td{background:rgba(127,212,168,.12)}
+footer{padding:8px 16px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(11,26,43,.94)}
+.bar{display:flex;align-items:center;justify-content:center;gap:14px}
+#act{min-width:160px;border:1px solid var(--a);color:var(--a);background:transparent;border-radius:10px;padding:11px 14px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
+#act.on{background:var(--a);color:#0B1A2B}
+#clock{font:700 30px var(--mono);min-width:160px;text-align:center;font-variant-numeric:tabular-nums}
+.round{width:48px;height:48px;border-radius:50%;font-size:19px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg);flex:none}
+#play{background:var(--g);color:#0B1A2B;border:none}
+.credit{text-align:center;color:var(--mut);font-size:11px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.credit.c2{margin-top:1px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:20}
+.modal.show{display:flex}
+.box{background:#0f2236;border:1px solid var(--line);border-radius:14px;padding:18px;width:min(560px,94vw);max-height:90vh;overflow:auto}
+.box h2{font-size:17px;margin-bottom:12px}
+.box input{width:100%;background:#071320;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:8px 10px;font:14px var(--mono)}
+.box label{display:block;color:var(--mut);font-size:12px;margin:10px 0 4px}
+.tt{width:100%;border-collapse:collapse;font:13px var(--mono);margin-top:4px}
+.tt th{color:var(--mut);font-weight:500;padding:4px;text-align:left;font-family:inherit;font-size:12px}
+.tt td{padding:4px}
+.isoSel{width:100%;min-width:125px;background:#071320;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:8px 6px;font:13px var(--mono)}
+.tt input{min-width:64px}
+.tt td.ans{color:var(--a);white-space:nowrap}
+.msg{font-size:13px;margin-top:8px;min-height:18px;color:var(--a)}
+.hint{color:var(--mut);font-size:12px;margin-top:10px;line-height:1.5}
+.sec{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+details summary{cursor:pointer;color:var(--g);font-size:14px}
+@media (max-width:760px){
+ main{flex-direction:column}
+ main{overflow-y:auto;-webkit-overflow-scrolling:touch}
+ #stage{flex:0 0 240px}
+ #counter{width:auto;flex:none}
+ #log{flex:none;overflow:visible}
+ #count{font-size:34px}
+ #clock{font-size:24px;min-width:120px}
+ #act{min-width:118px;font-size:14px;padding:10px}
+ h1{font-size:17px}.sub{font-size:12px}
+ .bar{gap:10px}
+ .chip{padding:6px 11px;font-size:13px}
+ .credit{font-size:10px;letter-spacing:-.1px}
+ .isoSel{min-width:96px;font-size:12px}
+ .tt input{padding:8px 4px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div><h1 data-i="title"></h1><div class="sub" data-i="sub"></div></div>
+  <div class="hb"><button class="hbtn" id="langBtn">EN/ไทย</button><button class="hbtn" id="tBtn" data-i="teacher"></button></div>
+</header>
+
+<div class="chips" id="chips">
+  <span class="lbl" data-i="sample"></span>
+  <button class="chip on" data-s="A">A</button>
+  <button class="chip" data-s="B">B</button>
+  <button class="chip" data-s="C">C</button>
+  <button class="chip" data-s="D">D</button>
+  <button class="chip" data-s="E">E</button>
+  <span class="sep"></span>
+  <button class="chip on" id="sndChip">🔊</button>
+  <button class="chip on" id="flChip">✷</button>
+</div>
+
+<main>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div id="counter">
+    <div class="ctop"><span data-i="counter"></span><span class="led" id="led"></span></div>
+    <div id="count">0</div>
+    <div class="row"><button class="btn" id="cReset" data-i="reset"></button><button class="btn g" id="cRec" data-i="record"></button></div>
+    <div id="log"></div>
+    <div class="row"><button class="btn s" id="csvBtn">CSV</button><button class="btn s" id="clrBtn" data-i="clr"></button></div>
+  </div>
+</main>
+
+<footer>
+  <div class="bar">
+    <button id="act"></button>
+    <div id="clock">00:00.00</div>
+    <button class="round" id="play">▶</button>
+    <button class="round" id="rst">↺</button>
+  </div>
+  <div class="credit" data-i="credit"></div><div class="credit c2" data-i="credit2"></div>
+</footer>
+
+<!-- password -->
+<div class="modal" id="pwM"><div class="box">
+  <h2 data-i="pw"></h2>
+  <input type="password" id="pwIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="msg" id="pwMsg"></div>
+  <div class="row" style="margin-top:8px"><button class="btn" id="pwCancel" data-i="cancel"></button><button class="btn g" id="pwOk" data-i="ok"></button></div>
+</div></div>
+
+<!-- teacher -->
+<div class="modal" id="tM"><div class="box">
+  <h2 data-i="tp"></h2>
+  <table class="tt"><thead><tr><th></th><th data-i="iso"></th><th data-i="half"></th><th data-i="r0"></th><th data-i="lam"></th></tr></thead><tbody id="tBody"></tbody></table>
+  <label data-i="bgl"></label><input type="number" id="bgIn" step="0.1" min="0">
+  <div class="row" style="margin-top:12px"><button class="btn g" id="applyBtn" data-i="apply"></button></div>
+  <div class="msg" id="tMsg"></div>
+  <div class="hint" data-i="note"></div>
+  <div class="sec">
+    <div class="row"><button class="btn" id="linkBtn" data-i="link"></button></div>
+    <input id="linkOut" readonly style="margin-top:8px">
+    <div class="row" style="margin-top:8px"><button class="btn s" id="copyBtn" data-i="copy"></button></div>
+  </div>
+  <div class="sec"><details><summary data-i="chg"></summary>
+    <label data-i="email"></label><input id="cEmail" type="email" autocapitalize="off" autocorrect="off">
+    <label data-i="apw"></label><input id="cPw" type="password" autocapitalize="off" autocorrect="off">
+    <label data-i="npw"></label><input id="cNew" type="text" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="row" style="margin-top:10px"><button class="btn g" id="cSave" data-i="save"></button></div>
+    <div class="msg" id="cMsg"></div>
+  </details></div>
+  <div class="row" style="margin-top:14px"><button class="btn" id="tClose" data-i="close"></button></div>
+</div></div>
+
+<script>
+/* ---------- text ---------- */
+const TX={
+en:{title:'Radioactive Decay',sub:'Count rate vs time · find the decay constant λ',sample:'SAMPLE',load:'Load sample',remove:'Remove sample',
+reset:'Reset',record:'Record',clr:'Clear',teacher:'Teacher',counter:'G-M COUNTER',tno:'#',tt:'t (s)',tc:'Counts',
+pw:'Teacher password',ok:'OK',cancel:'Cancel',wrong:'Wrong password',tp:'Teacher settings',half:'Half-life T½ (s)',r0:'Start rate (counts/s)',
+lam:'Answer λ (s⁻¹)',iso:'Isotope',custom:'Custom',bgl:'Background (counts/s)',apply:'Apply',applied:'Applied',link:'Create student link',copy:'Copy',copied:'Copied',
+chg:'Change password',email:'Email',apw:'Account password',npw:'New password',save:'Save',saved:'Saved (this browser)',bad:'Email or password incorrect',
+close:'Close',clrq:'Clear all records?',bad2:'Values must be greater than 0',
+note:'Students: reset counter → count for a fixed time → record. Plot ln(count rate) vs t; slope = −λ, T½ = ln2/λ. Subtract background.',
+credit:'Asst.Prof.Dr. Rossumont Jaryabhand · No Right Reserved',credit2:'Rajamangala University of Technology Tawan-ok, Uthenthawai Campus'},
+th:{title:'การสลายตัวของสารกัมมันตรังสี',sub:'อัตรานับเทียบกับเวลา · หาค่าคงตัวการสลาย λ',sample:'สาร',load:'ใส่สาร',remove:'นำสารออก',
+reset:'ล้างค่า',record:'บันทึก',clr:'ลบ',teacher:'ครู',counter:'เครื่องนับไกเกอร์',tno:'#',tt:'t (วินาที)',tc:'จำนวนนับ',
+pw:'รหัสผ่านครู',ok:'ตกลง',cancel:'ยกเลิก',wrong:'รหัสผ่านไม่ถูกต้อง',tp:'ตั้งค่าครู',half:'ครึ่งชีวิต T½ (วินาที)',r0:'อัตรานับเริ่มต้น (ครั้ง/วินาที)',
+lam:'เฉลย λ (วินาที⁻¹)',iso:'ไอโซโทป',custom:'กำหนดเอง',bgl:'รังสีพื้นหลัง (ครั้ง/วินาที)',apply:'ใช้ค่า',applied:'ใช้ค่าแล้ว',link:'สร้างลิงก์นักศึกษา',copy:'คัดลอก',copied:'คัดลอกแล้ว',
+chg:'เปลี่ยนรหัสผ่าน',email:'อีเมล',apw:'รหัสผ่านบัญชี',npw:'รหัสผ่านใหม่',save:'บันทึก',saved:'บันทึกแล้ว (เฉพาะเบราว์เซอร์นี้)',bad:'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+close:'ปิด',clrq:'ลบข้อมูลทั้งหมด?',bad2:'ค่าต้องมากกว่า 0',
+note:'นักศึกษา: ล้างค่าเครื่องนับ → นับในช่วงเวลาคงที่ → บันทึก แล้วเขียนกราฟ ln(อัตรานับ) กับ t ความชัน = −λ, T½ = ln2/λ อย่าลืมหักรังสีพื้นหลัง',
+credit:'ผศ.ดร.รสสุมนต์ จารยะพันธุ์ · ไม่สงวนลิขสิทธิ์',credit2:'มหาวิทยาลัยเทคโนโลยีราชมงคลตะวันออก อุเทนถวาย'}
+};
+let lang='en';
+const $=id=>document.getElementById(id);
+const t=k=>TX[lang][k]||k;
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));
+  document.title=t('title');
+  $('act').textContent=loaded?t('remove'):t('load');
+  renderLog(); updateChips(); if($('tM').classList.contains('show')) fillTeacher();
+}
+
+/* ---------- parameters ---------- */
+const ISO=[
+ {k:'Rn-220',h:55.6,d:'α'},{k:'Pa-234m',h:69.5,d:'β⁻'},{k:'Al-28',h:134.5,d:'β⁻'},{k:'Ag-108',h:142.9,d:'β⁻'},
+ {k:'Ba-137m',h:153.1,d:'γ'},{k:'V-52',h:224.6,d:'β⁻'},{k:'Cu-66',h:307.2,d:'β⁻'},{k:'I-131',h:692928,d:'β⁻ γ'}];
+const DEF={A:{h:55.6,r:40},B:{h:153.1,r:30},C:{h:224.6,r:25},D:{h:69.5,r:35},E:{h:692928,r:30},bg:0.5};
+let P=JSON.parse(JSON.stringify(DEF));
+function labelOf(k){const m=ISO.find(x=>Math.abs(x.h-P[k].h)<0.05);return m?m.k:k;}
+function updateChips(){document.querySelectorAll('[data-s]').forEach(b=>b.textContent=labelOf(b.dataset.s));}
+const KEY='rsm9545';
+function enc(o){const s=JSON.stringify(o);let x='';for(let i=0;i<s.length;i++)x+=String.fromCharCode(s.charCodeAt(i)^KEY.charCodeAt(i%KEY.length));return btoa(x).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function dec(z){z=z.replace(/-/g,'+').replace(/_/g,'/');while(z.length%4)z+='=';const s=atob(z);let x='';for(let i=0;i<s.length;i++)x+=String.fromCharCode(s.charCodeAt(i)^KEY.charCodeAt(i%KEY.length));return JSON.parse(x);}
+function validP(o){try{return ['A','B','C','D','E'].every(k=>o[k]&&o[k].h>0&&o[k].r>0)&&o.bg>=0;}catch(e){return false}}
+(function(){const m=location.hash.match(/k=([A-Za-z0-9_-]+)/);if(m){try{const o=dec(m[1]);if(o&&!o.D)o.D=DEF.D;if(o&&!o.E)o.E=DEF.E;if(validP(o))P=o;}catch(e){}}})();
+
+/* ---------- state ---------- */
+let sel='A',loaded=false,tLoad=0,loadAnim=0,counts=0,sound=true,flash=true;
+let log=[];
+let swRun=false,swStart=0,swAcc=0;
+let glow=0,ledUntil=0,parts=[];
+
+/* ---------- audio (click) ---------- */
+let actx=null,clickBuf=null;
+function initAudio(){
+  if(actx){if(actx.state!=='running')actx.resume();return;}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  actx=new AC();
+  const len=Math.floor(actx.sampleRate*0.006);
+  clickBuf=actx.createBuffer(1,len,actx.sampleRate);
+  const d=clickBuf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(len*0.18));
+  actx.resume();
+}
+document.addEventListener('pointerdown',initAudio,{passive:true});
+function click(delay){
+  if(!sound||!actx||actx.state!=='running')return;
+  const s=actx.createBufferSource();s.buffer=clickBuf;
+  const g=actx.createGain();g.gain.value=0.7;
+  s.connect(g);g.connect(actx.destination);
+  s.start(actx.currentTime+Math.max(0,delay));
+}
+
+/* ---------- physics ---------- */
+function poisson(mu){
+  if(mu<=0)return 0;
+  if(mu<30){const L=Math.exp(-mu);let k=0,p=1;do{k++;p*=Math.random();}while(p>L);return k-1;}
+  const u=1-Math.random(),v=Math.random();
+  return Math.max(0,Math.round(mu+Math.sqrt(mu)*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)));
+}
+
+/* ---------- canvas ---------- */
+const cv=$('cv'),cx=cv.getContext('2d');let W=0,H=0,G={};
+function resize(){
+  const r=$('stage').getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  W=r.width;H=r.height;cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  const rr=Math.max(16,Math.min(W*0.075,H*0.15));
+  const cy=H*0.47,hx=Math.max(rr*2.2,W*0.2);
+  const x1=Math.max(hx+rr*2.8,W*0.42),x2=W-Math.max(26,W*0.06);
+  G={r:rr,cy,hx,x1,x2,tr:rr*0.62,bench:cy+rr*2.1};
+}
+new ResizeObserver(resize).observe($('stage'));resize();
+
+function rrect(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath();}
+
+function spawn(isSrc,delay,now){
+  const g=G;let sx,sy,ex,ey;
+  if(isSrc){const a=Math.random()*6.283,d=Math.sqrt(Math.random())*g.r*0.75;sx=g.hx+Math.cos(a)*d;sy=g.cy+Math.sin(a)*d;ex=g.x1;ey=g.cy+(Math.random()-.5)*g.tr*1.5;}
+  else{const top=Math.random()<.5;sx=g.x1+Math.random()*(g.x2-g.x1);sy=top?-10:H+10;ex=g.x1+g.tr+Math.random()*(g.x2-g.x1-2*g.tr);ey=g.cy+(Math.random()-.5)*g.tr;}
+  parts.push({t0:now+delay*1000,sx,sy,ex,ey,src:isSrc,hit:false});
+  click(delay+0.09);
+}
+
+function draw(now){
+  const g=G;cx.clearRect(0,0,W,H);
+  // bench
+  cx.strokeStyle='rgba(238,233,220,.22)';cx.lineWidth=1.5;cx.beginPath();cx.moveTo(12,g.bench);cx.lineTo(W-12,g.bench);cx.stroke();
+  // lead holder
+  const hy=g.cy-g.r*1.75;
+  cx.fillStyle='#2c3542';rrect(g.hx-g.r*1.75,hy,g.r*2.85,g.bench-hy,6);cx.fill();
+  cx.fillStyle='#101a25';rrect(g.hx-g.r*1.25,g.cy-g.r*1.25,g.r*2.35,g.r*2.5,4);cx.fill();
+  cx.fillStyle='#7d8896';cx.font=`600 ${Math.max(10,g.r*0.32)}px ui-monospace,Menlo,monospace`;cx.textAlign='center';cx.textBaseline='middle';
+  cx.fillText('Pb',g.hx-g.r*0.25,hy+g.r*0.25);
+  // sample
+  if(loaded){
+    const p=Math.min(1,(now-loadAnim)/350);cx.globalAlpha=p;
+    const gr=cx.createRadialGradient(g.hx-g.r*.3,g.cy-g.r*.3,g.r*.1,g.hx,g.cy,g.r);
+    gr.addColorStop(0,'#f5d58a');gr.addColorStop(1,'#a8781c');
+    cx.fillStyle=gr;cx.beginPath();cx.arc(g.hx,g.cy,g.r*(0.85+0.15*p),0,6.283);cx.fill();
+    cx.strokeStyle='#E8B23A';cx.lineWidth=2;cx.stroke();
+    const lb=labelOf(sel),fs=Math.min(g.r*0.7,g.r*1.55/Math.max(1,lb.length*0.62));cx.fillStyle='#0B1A2B';cx.font=`700 ${fs}px ui-monospace,Menlo,monospace`;cx.fillText(lb,g.hx,g.cy+1);
+    cx.globalAlpha=1;
+  }else{
+    cx.setLineDash([5,5]);cx.strokeStyle='rgba(232,178,58,.45)';cx.lineWidth=1.5;cx.beginPath();cx.arc(g.hx,g.cy,g.r,0,6.283);cx.stroke();cx.setLineDash([]);
+  }
+  // stands
+  cx.fillStyle='#3a4656';
+  [0.25,0.75].forEach(f=>{const x=g.x1+(g.x2-g.x1)*f;cx.fillRect(x-3,g.cy+g.tr,6,g.bench-g.cy-g.tr);cx.fillRect(x-12,g.bench-4,24,4);});
+  // cable
+  cx.strokeStyle='#3a4656';cx.lineWidth=4;cx.beginPath();cx.moveTo(g.x2,g.cy);cx.bezierCurveTo(g.x2+30,g.cy,W-8,g.cy+20,W+5,g.bench+10);cx.stroke();
+  // tube
+  const tg=cx.createLinearGradient(0,g.cy-g.tr,0,g.cy+g.tr);
+  tg.addColorStop(0,'#5d6a7a');tg.addColorStop(.35,'#c3ccd7');tg.addColorStop(1,'#596676');
+  cx.fillStyle=tg;rrect(g.x1,g.cy-g.tr,g.x2-g.x1,g.tr*2,g.tr*0.5);cx.fill();
+  if(flash&&glow>0.02){
+    cx.save();cx.shadowColor='#7FD4A8';cx.shadowBlur=30*glow;
+    cx.fillStyle=`rgba(127,212,168,${0.6*glow})`;rrect(g.x1,g.cy-g.tr,g.x2-g.x1,g.tr*2,g.tr*0.5);cx.fill();cx.restore();
+  }
+  cx.fillStyle='#1a2533';cx.beginPath();cx.ellipse(g.x1,g.cy,g.tr*0.3,g.tr*0.95,0,0,6.283);cx.fill();
+  cx.strokeStyle='#dfe5ec';cx.lineWidth=2;cx.stroke();
+  cx.fillStyle='rgba(11,26,43,.75)';cx.font=`700 ${Math.max(10,g.tr*0.55)}px ui-monospace,Menlo,monospace`;cx.fillText('G-M',(g.x1+g.x2)/2,g.cy+1);
+  // particles
+  for(let i=parts.length-1;i>=0;i--){
+    const p=parts[i],f=(now-p.t0)/90;
+    if(f<0)continue;
+    if(f>2.2){parts.splice(i,1);continue;}
+    if(!p.hit&&f>=1){p.hit=true;glow=1;ledUntil=now+40;}
+    if(p.src&&flash){cx.fillStyle=`rgba(255,240,190,${Math.max(0,1-f/2.2)})`;cx.beginPath();cx.arc(p.sx,p.sy,2.5,0,6.283);cx.fill();}
+    if(f<=1.6){
+      const h=Math.min(f,1),tl=Math.max(0,f-0.4);
+      cx.strokeStyle=p.src?`rgba(127,212,168,${f>1?(1.6-f)/0.6:0.95})`:`rgba(170,190,210,${f>1?(1.6-f)/0.6*0.7:0.7})`;
+      cx.lineWidth=2;cx.beginPath();
+      cx.moveTo(p.sx+(p.ex-p.sx)*tl,p.sy+(p.ey-p.sy)*tl);cx.lineTo(p.sx+(p.ex-p.sx)*h,p.sy+(p.ey-p.sy)*h);cx.stroke();
+    }
+  }
+}
+
+/* ---------- loop ---------- */
+let last=performance.now();
+function fmt(ms){const cs=Math.floor(ms/10),m=Math.floor(cs/6000),s=Math.floor(cs/100)%60,c=cs%100;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(c).padStart(2,'0');}
+function swMs(now){return swAcc+(swRun?now-swStart:0);}
+function loop(now){
+  const dt=Math.max(0,(now-last)/1000);
+  let muS=0;
+  if(loaded){const k=P[sel],lam=Math.LN2/k.h,t1=(last-tLoad)/1000,t2=(now-tLoad)/1000;muS=k.r/lam*(Math.exp(-lam*Math.max(0,t1))-Math.exp(-lam*t2));}
+  const muB=P.bg*dt;
+  last=now;
+  const n=poisson(muS+muB);
+  if(n>0){
+    counts+=n;$('count').textContent=counts;
+    const ps=muS/(muS+muB),vis=Math.min(n,12);
+    for(let i=0;i<vis;i++)spawn(Math.random()<ps,Math.random()*Math.min(dt,0.05),now);
+  }
+  glow*=0.82;
+  $('led').classList.toggle('on',now<ledUntil);
+  $('clock').textContent=fmt(swMs(now));
+  draw(now);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- controls ---------- */
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{
+  sel=b.dataset.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b));
+  if(loaded){loaded=false;$('act').classList.remove('on');$('act').textContent=t('load');}
+});
+$('sndChip').onclick=()=>{sound=!sound;$('sndChip').textContent=sound?'🔊':'🔇';$('sndChip').classList.toggle('on',sound);initAudio();};
+$('flChip').onclick=()=>{flash=!flash;$('flChip').classList.toggle('on',flash);};
+$('act').onclick=()=>{
+  loaded=!loaded;
+  if(loaded){tLoad=performance.now();loadAnim=tLoad;}
+  $('act').classList.toggle('on',loaded);$('act').textContent=loaded?t('remove'):t('load');
+};
+$('play').onclick=()=>{const now=performance.now();if(swRun){swAcc+=now-swStart;swRun=false;}else{swStart=now;swRun=true;}$('play').textContent=swRun?'⏸':'▶';};
+$('rst').onclick=()=>{swRun=false;swAcc=0;$('play').textContent='▶';};
+$('cReset').onclick=()=>{counts=0;$('count').textContent='0';};
+$('cRec').onclick=()=>{log.push({t:swMs(performance.now())/1000,c:counts});renderLog();const r=$('log').querySelector('tr.new');if(r)r.scrollIntoView({block:'nearest'});};
+$('clrBtn').onclick=()=>{if(log.length&&confirm(t('clrq'))){log=[];renderLog();}};
+$('csvBtn').onclick=()=>{
+  let s='No,t(s),counts\n';log.forEach((r,i)=>s+=`${i+1},${r.t.toFixed(2)},${r.c}\n`);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+s],{type:'text/csv'}));a.download='radioactive-decay-'+labelOf(sel)+'.csv';a.click();
+};
+function renderLog(){
+  let h=`<table><thead><tr><th>${t('tno')}</th><th>${t('tt')}</th><th>${t('tc')}</th></tr></thead><tbody>`;
+  log.forEach((r,i)=>h+=`<tr${i===log.length-1?' class="new"':''}><td>${i+1}</td><td>${r.t.toFixed(2)}</td><td class="c">${r.c}</td></tr>`);
+  for(let i=log.length;i<Math.max(12,log.length);i++)h+=`<tr><td>${i+1}</td><td></td><td></td></tr>`;
+  $('log').innerHTML=h+'</tbody></table>';
+}
+$('langBtn').onclick=()=>{lang=lang==='en'?'th':'en';applyLang();};
+
+/* ---------- teacher ---------- */
+const DEFPW='9;5:4*5\u2018';
+const norm=s=>String(s||'').replace(/[\u2018\u2019\u201A\u201B`\u00B4]/g,"'").replace(/[\u201C\u201D]/g,'"').trim();
+function curPw(){try{return localStorage.getItem('radDecayPw')||DEFPW;}catch(e){return DEFPW;}}
+$('tBtn').onclick=()=>{$('pwIn').value='';$('pwMsg').textContent='';$('pwM').classList.add('show');setTimeout(()=>$('pwIn').focus(),50);};
+$('pwCancel').onclick=()=>$('pwM').classList.remove('show');
+function tryPw(){if(norm($('pwIn').value)===norm(curPw())){$('pwM').classList.remove('show');openTeacher();}else $('pwMsg').textContent=t('wrong');}
+$('pwOk').onclick=tryPw;$('pwIn').onkeydown=e=>{if(e.key==='Enter')tryPw();};
+function fillTeacher(){
+  let h='';['A','B','C','D','E'].forEach(k=>{const lam=Math.LN2/P[k].h;
+    const m=ISO.find(x=>Math.abs(x.h-P[k].h)<0.05);
+    const opts=ISO.map(x=>`<option value="${x.h}"${m===x?' selected':''}>${x.k} (${x.d})</option>`).join('')+`<option value=""${m?'':' selected'}>${t('custom')}</option>`;
+    h+=`<tr><td><b>${k}</b></td><td><select id="s${k}" class="isoSel">${opts}</select></td><td><input type="number" id="h${k}" value="${P[k].h}" step="0.1" min="0.1"></td><td><input type="number" id="r${k}" value="${P[k].r}" step="1" min="1"></td><td class="ans">${lam<1e-4?lam.toExponential(2):lam.toFixed(5)}</td></tr>`;});
+  $('tBody').innerHTML=h;$('bgIn').value=P.bg;
+  ['A','B','C','D','E'].forEach(k=>{
+    $('s'+k).onchange=e=>{if(e.target.value)$('h'+k).value=e.target.value;};
+    $('h'+k).oninput=e=>{const m=ISO.find(x=>Math.abs(x.h-parseFloat(e.target.value))<0.05);$('s'+k).value=m?String(m.h):'';};
+  });
+}
+function openTeacher(){fillTeacher();$('tMsg').textContent='';$('linkOut').value='';$('cMsg').textContent='';$('tM').classList.add('show');}
+function readInputs(){
+  const o={bg:parseFloat($('bgIn').value)};
+  ['A','B','C','D','E'].forEach(k=>o[k]={h:parseFloat($('h'+k).value),r:parseFloat($('r'+k).value)});
+  return validP(o)?o:null;
+}
+$('applyBtn').onclick=()=>{const o=readInputs();if(!o){$('tMsg').textContent=t('bad2');return;}P=o;fillTeacher();updateChips();$('tMsg').textContent=t('applied');if(loaded){tLoad=performance.now();loadAnim=tLoad;}};
+$('linkBtn').onclick=()=>{const o=readInputs();if(!o){$('tMsg').textContent=t('bad2');return;}P=o;fillTeacher();updateChips();$('linkOut').value=location.href.split('#')[0]+'#k='+enc(P);};
+$('copyBtn').onclick=()=>{const v=$('linkOut').value;if(!v)return;
+  const done=()=>{$('copyBtn').textContent=t('copied');setTimeout(()=>$('copyBtn').textContent=t('copy'),1500);};
+  if(navigator.clipboard)navigator.clipboard.writeText(v).then(done,()=>{$('linkOut').select();document.execCommand('copy');done();});
+  else{$('linkOut').select();document.execCommand('copy');done();}};
+$('cSave').onclick=()=>{
+  const ok=$('cEmail').value.trim().toLowerCase()==='rossumont@gmail.com'&&$('cPw').value==='LhaMoAPL9545=';
+  const nw=$('cNew').value.trim();
+  if(!ok||!nw){$('cMsg').textContent=t('bad');return;}
+  try{localStorage.setItem('radDecayPw',nw);}catch(e){}
+  $('cMsg').textContent=t('saved');$('cEmail').value=$('cPw').value=$('cNew').value='';
+};
+$('tClose').onclick=()=>$('tM').classList.remove('show');
+
+applyLang();
+</script>
+</body>
+</html>
